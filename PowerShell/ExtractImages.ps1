@@ -4,6 +4,7 @@ param (
 
 $pdfInfoExe = 'C:\ProgramData\chocolatey\bin\pdfinfo.exe'
 $pdfImagesExe = 'C:\ProgramData\chocolatey\bin\pdfimages.exe'
+$pdfToTextExe = 'C:\ProgramData\chocolatey\bin\pdftotext.exe'
 
 $pdfInfo = & $pdfInfoExe $pdfFile
 
@@ -31,4 +32,10 @@ For ($page = 1; $page -le $pages; $page++) {
   New-Item -ItemType directory -Path $targetDir
 
   & $pdfImagesExe -f $page -l $page $pdfFile $targetOutput
+
+  $targetTextFile = $targetOutput + ".txt"
+
+  Write-Output "Creating text file $targetTextFile"
+
+  & $pdfToTextExe -f $page -l $page -table $pdffile $targetTextFile
 }

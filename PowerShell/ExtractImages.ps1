@@ -1,5 +1,5 @@
 param (
-  [string]$pdfFile = 'D:\temp\pdftest\VASTEC_CapState_2015_R.pdf'
+  [string]$pdfFile = 'D:\temp\test.pdf'
 )
 
 $pdfInfoExe = 'C:\ProgramData\chocolatey\bin\pdfinfo.exe'
@@ -23,8 +23,10 @@ $pageDigits = [math]::Truncate([math]::Log10($pages)) + 1;
 Write-Output "log10 of pages = $pageDigits"
 
 For ($page = 1; $page -le $pages; $page++) {
-  $targetDir = $baseDir + '.page' + $page.ToString().Padleft($pageDigits, 0)
+  $targetDir = $baseDir + '.page' + $page.ToString().Padleft($pageDigits, '0')
   $targetOutput = $targetDir + '\image'
+
+  Write-Output "Creating folder $targetDir"
 
   New-Item -ItemType directory -Path $targetDir
 

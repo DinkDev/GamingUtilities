@@ -2,48 +2,78 @@ param (
   [string]$pdfFile = 'D:\temp\test.pdf'
 )
 
-$pdfInfoExe = 'C:\ProgramData\chocolatey\bin\pdfinfo.exe'
-$pdfImagesExe = 'C:\ProgramData\chocolatey\bin\pdfimages.exe'
-$pdfToTextExe = 'C:\ProgramData\chocolatey\bin\pdftotext.exe'
+$pdfInfoExe = 'pdfinfo.exe'
+$pdfImagesExe = 'pdfimages.exe'
+$pdfToTextExe = 'pdftotext.exe'
+$nConvertExe = 'nconvert.exe'
 
-$pdfInfo = & $pdfInfoExe $pdfFile
+$haveAllExes = $true
 
-$pdfPagesResult = $pdfInfo | Where-Object {$_ -match 'Pages:'} |
-  Foreach-Object { $_ -replace 'Pages:\s*', ''} |
-  Select-Object -First 1
+if ($null -eq (Get-Command $pdfInfoExe -ErrorAction SilentlyContinue))
+{
+  $haveAllExes = $false
+  Write-Host "Unable to find $pdfInfoExe in your PATH"
+}
 
-[int]$pages = [convert]::ToInt32($pdfPagesResult, 10)
+if ($null -eq (Get-Command $pdfImagesExe -ErrorAction SilentlyContinue))
+{
+  $haveAllExes = $false
+  Write-Host "Unable to find $pdfImagesExe in your PATH"
+}
 
-# Write-Output "The file $pdfFile has $pages pages."
-Write-Output "The file $pdfFile has $pages pages."
+if ($null -eq (Get-Command $pdfToTextExe -ErrorAction SilentlyContinue))
+{
+  $haveAllExes = $false
+  Write-Host "Unable to find $pdfToTextExe in your PATH"
+}
 
-$baseDir = [io.path]::GetFileNameWithoutExtension($pdfFile)
+if ($null -eq (Get-Command $nConvertExe -ErrorAction SilentlyContinue))
+{
+  $haveAllExes = $false
+  Write-Host "Unable to find $nConvertExe in your PATH"
+}
 
-$pageDigits = [math]::Truncate([math]::Log10($pages)) + 1;
+if ($haveAllExes)
+{
+  $pdfInfo = & $pdfInfoExe $pdfFile
 
-Write-Output "log10 of pages = $pageDigits"
+  $pdfPagesResult = $pdfInfo | Where-Object {$_ -match 'Pages:'} |
+    Foreach-Object { $_ -replace 'Pages:\s*', ''} |
+    Select-Object -First 1
 
-For ($page = 1; $page -le $pages; $page++) {
-  $targetDir = $baseDir + '.page' + $page.ToString().Padleft($pageDigits, '0')
-  $targetOutput = $targetDir + '\image'
+  [int]$pages = [convert]::ToInt32($pdfPagesResult, 10)
 
-  Write-Output "Creating folder $targetDir"
+  # Write-Output "The file $pdfFile has $pages pages."
+  Write-Output "The file $pdfFile has $pages pages."
 
-  New-Item -ItemType directory -Path $targetDir
+  $baseDir = [io.path]::GetFileNameWithoutExtension($pdfFile)
 
-  & $pdfImagesExe -f $page -l $page $pdfFile $targetOutput
+  $pageDigits = [math]::Truncate([math]::Log10($pages)) + 1;
 
-  $targetTextFile = $targetOutput + ".txt"
+  Write-Output "log10 of pages = $pageDigits"
 
-  Write-Output "Creating text file $targetTextFile"
+  For ($page = 1; $page -le $pages; $page++) {
+    $targetDir = $baseDir + '.page' + $page.ToString().Padleft($pageDigits, '0')
+    $targetOutput = $targetDir + '\image'
 
-  & $pdfToTextExe -f $page -l $page -table $pdffile $targetTextFile
+    Write-Output "Creating folder $targetDir"
 
-  Write-Output "Converting images in $targetDir to png"
+    New-Item -ItemType directory -Path $targetDir
 
-  Push-Location $targetDir
+    & $pdfImagesExe -f $page -l $page $pdfFile $targetOutput
 
-  nconvert -out png -D image-*.*
+    $targetTextFile = $targetOutput + ".txt"
 
-  Pop-Location
+    Write-Output "Creating text file $targetTextFile"
+
+    & $pdfToTextExe -f $page -l $page -table $pdffile $targetTextFile
+
+    Write-Output "Converting images in $targetDir to png"
+
+    Push-Location $targetDir
+
+    & $nConvertExe -out png -D image-*.*
+
+    Pop-Location
+  }
 }

@@ -38,4 +38,12 @@ For ($page = 1; $page -le $pages; $page++) {
   Write-Output "Creating text file $targetTextFile"
 
   & $pdfToTextExe -f $page -l $page -table $pdffile $targetTextFile
+
+  Write-Output "Converting images in $targetDir to png"
+
+  Push-Location $targetDir
+
+  nconvert -out png -D image-*.*
+
+  Pop-Location
 }

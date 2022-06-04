@@ -1,0 +1,24 @@
+﻿$source = "C:\Users\Dale\documents\DriveThruRPG\Dungeon Masters Guild"
+
+$effectDirsPattern = "Fantasy Grounds 5E *Effects Coding *"
+
+$modDirs = Get-ChildItem -Path $source -Include $effectDirsPattern -Name
+
+$targetPath = Join-Path -Path $env:APPDATA -ChildPath "Smiteworks\Fantasy Grounds\modules"
+
+ForEach ($modDir in $modDirs)
+{
+    $modPath = Join-Path -Path $source -ChildPath $modDir
+
+    $modFiles = Get-ChildItem -Path $modPath -Include "*.mod" -Name
+
+    ForEach ($modFile in $modFiles)
+    {
+        if ($modFile -NotLike "*LOCKED*")
+        {
+            $modFilePath = Join-Path -Path $modPath -ChildPath $modFile
+
+            Copy-Item $modFilePath -Destination $targetPath
+        }
+    }
+}
